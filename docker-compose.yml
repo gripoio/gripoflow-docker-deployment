@@ -1,0 +1,65 @@
+version: "3.9"
+
+services:
+  gripo-workflow-nginx:
+    image: gripo/gripo-workflow-nginx:1.0
+    environment:
+      - LISTEN_PORT=5055
+      - API_BACKEND=http://gripo-workflow-backend:5001
+      - FRONTEND_BACKEND=http://gripo-workflow-frontend:3000
+    depends_on:
+      - gripo-workflow-backend
+      - gripo-workflow-frontend
+    ports:
+      - "7055:5055"
+    networks:
+      - gripo-workflow
+  gripo-workflow-db:
+    image: mongo:8.0.4
+    ports:
+      - "27019:27017"
+    volumes:
+      - gripoworkflowdb_data_volume:/data/db
+    networks:
+      - gripo-workflow
+  gripo-workflow-redis:
+    image: redis:latest
+    container_name: gripo-workflow-redis
+    ports:
+      - "6378:6379"
+    networks:
+      - gripo-workflow
+  gripo-workflow-backend:
+    image: gripo/gripo-workflow:latest
+    container_name: gripo-workflow-backend
+    ports:
+      - "5001:5001"
+    environment:
+      - TEMPORAL_SERVER_URL=temporal:7233
+      - REDIS_URL=gripo-workflow-redis:6379
+      - DB_CONNECTION_STRING=mongodb://gripo-workflow-db:27017
+      - SERVER_IP=0.0.0.0:5001
+    depends_on:
+      - gripo-workflow-redis
+      - gripo-workflow-db
+    networks:
+      - gripo-workflow
+  gripo-workflow-frontend:
+    image: gripo/gripo-workflow-frontend:latest
+    container_name: gripo-workflow-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - gripo-workflow
+
+volumes:
+  gripoworkflowdb_data_volume:
+
+networks:
+  gripo-workflow:
+    driver: bridge
+
+
+
+
