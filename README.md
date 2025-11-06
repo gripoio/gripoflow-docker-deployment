@@ -19,8 +19,11 @@ A minimal, production-minded Docker Compose setup for **GripoFlow** — your all
 ```bash
 git clone https://github.com/gripoio/gripoflow-docker-deployment.git
 cd gripoflow-docker-deployment
-# if needed, switch to the deployment branch
-git checkout deploy-gripoflow
+cd temporal/ 
+sudo docker compose up -d
+cd ..
+# Wait for all temporal services to run properly
+sudo docker compose up -d
 ```
 
 ### 2) Bring it up (detached)
