@@ -7,13 +7,12 @@ services:
       POSTGRES_USER: temporal
     image: postgres:${POSTGRESQL_VERSION}
     networks:
-      - gripo-workflow
+      - gripo-flow
     expose:
       - 5432
     volumes:
       - /var/lib/postgresql/data
-    ports:
-      - 5431:5432
+  
   temporal:
     container_name: temporal
     depends_on:
@@ -27,41 +26,13 @@ services:
       - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
     image: temporalio/auto-setup:${TEMPORAL_VERSION}
     networks:
-      - gripo-workflow
-    ports:
-      - 7233:7233
+      - gripo-flow
     volumes:
       - ./dynamicconfig:/etc/temporal/config/dynamicconfig
-  temporal-admin-tools:
-    container_name: temporal-admin-tools
-    depends_on:
-      - temporal
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CLI_ADDRESS=temporal:7233
-    image: temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION}
-    networks:
-      - gripo-workflow
-    stdin_open: true
-    tty: true
-  temporal-ui:
-    container_name: temporal-ui
-    depends_on:
-      - temporal
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
-    image: temporalio/ui:${TEMPORAL_UI_VERSION}
-    networks:
-      - gripo-workflow
-    ports:
-      - 8080:8080
 
 networks:
-  gripo-workflow:
+  gripo-flow:
     driver: bridge
-    name: gripo-workflow
-
-
+    name: gripo-flow
 
 

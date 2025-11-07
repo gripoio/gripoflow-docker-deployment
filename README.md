@@ -1,99 +1,107 @@
 # 🐳 GripoFlow (Docker Compose Deployment)
 
-A minimal, production-minded Docker Compose setup for **GripoFlow** — your all-in-one workflow automation platform. This guide focuses on fast install, simple commands, and secure defaults.
+**GripoFlow** is a Kubernetes-native workflow automation platform that lets you connect external apps, build intelligent workflows, and automate anything — from DevOps pipelines to business operations — in just a few steps.
 
 ---
 
 ## ✅ Prerequisites
 
-* **Docker** 24+
-* **Docker Compose** v2+
-* CPU & RAM: 2 vCPU / 4 GB RAM (minimum)
+* **Docker:** 24+
+* **Docker Compose:** v2+
+* **System Requirements:** 2 vCPU · 4 GB RAM (minimum)
 
 ---
 
 ## 🚀 Quick Start
 
-### 1) Clone & enter
+### 1️⃣ Clone the Repository
 
 ```bash
 git clone https://github.com/gripoio/gripoflow-docker-deployment.git
 cd gripoflow-docker-deployment
-cd temporal/ 
-sudo docker compose up -d
-cd ..
-# Wait for all temporal services to run properly
-sudo docker compose up -d
 ```
 
-### 2) Bring it up (detached)
+### 2️⃣ Start Temporal Services
 
 ```bash
-docker compose up -d
+cd temporal/
+sudo docker compose up -d
 ```
 
-### 3) Open the app
+### 3️⃣ Start GripoFlow
+
+```bash
+cd ..
+sudo docker compose up -d
+```
+
+### 4️⃣ Access the App
 
 ```
-http://localhost:5055
+http://localhost:7055
 ```
 
 ---
 
 ## 🧾 Post-Install Notes
 
-After successful deployment, Docker Compose displays running containers:
+After a successful launch, Docker Compose will display active containers:
 
 ```bash
 Thank you for installing GripoFlow!
 
 Service Name: gripoflow
 Network: gf
-Access via:
-http://127.0.0.1:5055
+Access via: http://127.0.0.1:5055
 ```
 
 ---
 
 ## 🔗 Connect External Apps (Plugins)
 
-GripoFlow supports **plugin-based integration** with external applications using **JSON Manifests**. Each plugin defines its tools, APIs, and activities that can be triggered within workflows.
+GripoFlow supports **plugin-based integration** via **JSON Manifests**.
+Each plugin defines APIs, tools, and activities that can be executed inside workflows.
 
-### Example Integrations
+### 🌍 Example Integrations
 
-* **Slack:** Send automated notifications.
-* **GitHub / GitLab / Jenkins:** Trigger CI/CD pipelines or deployment workflows.
-* **Azure / AWS / GCP:** Manage Kubernetes clusters, servers, or storage.
-* **Notion / Airtable / ClickUp:** Automate data syncing and task creation.
-* **WhatsApp:** Send real-time alerts or workflow notifications.
-* **PostgreSQL / MySQL:** Run database queries dynamically.
-* **HubSpot / Salesforce:** Automate lead follow-ups or CRM updates.
+* **Slack:** Send instant alerts or updates.
+* **GitHub / GitLab / Jenkins:** Trigger CI/CD pipelines automatically.
+* **Azure / AWS / GCP:** Start or stop Kubernetes clusters and cloud resources.
+* **Notion / Airtable / ClickUp:** Sync data and automate tasks.
+* **WhatsApp:** Trigger workflows from messages.
+* **PostgreSQL / MySQL:** Execute dynamic queries.
+* **HubSpot / Salesforce:** Automate CRM lead updates.
 
-Plugins are managed via JSON manifests and can be mounted in your container for runtime access.
+> 💡 Manage your plugins by mounting their JSON manifests into the container (e.g., `./plugins:/app/plugins:ro`).
 
 ---
 
 ## 🧩 Expression System
 
-GripoFlow provides a powerful **expression syntax** to dynamically access and pass data between triggers, inputs, activities, and connections securely.
+GripoFlow includes a powerful **expression syntax** to securely reference inputs, triggers, activities, and connections.
 
 ### 🔐 Secure Connection Access
 
-Safely access credentials without exposing them in logs:
+Use credentials without exposing them in logs:
 
 ```handlebars
-{{flow.connection.gripoAzure.token}}
 {{flow.connection.github.access_token}}
 {{flow.connection.slack.webhook_url}}
+{{flow.connection.gripoAzure.token}}
 ```
 
-> 🔒 Connections are encrypted and evaluated securely at runtime.
+> 🔒 All credentials are encrypted and evaluated securely at runtime.
 
-### ⚡ Trigger Payloads
+### ⚡ Triggers
 
-Four trigger types are supported: **onDemand**, **schedule**, **webhook**, and **whatsapp**.
+Supported trigger types:
 
-Webhook and WhatsApp triggers can pass payload data:
+* `onDemand`
+* `schedule`
+* `webhook`
+* `whatsapp`
+
+Webhook and WhatsApp triggers allow you to use incoming payloads:
 
 ```handlebars
 {{flow.trigger.payload.user.email}}
@@ -101,11 +109,11 @@ Webhook and WhatsApp triggers can pass payload data:
 {{flow.trigger.payload.message.text}}
 ```
 
-> Example: A WhatsApp message like “start cluster” can trigger an Azure cluster startup.
+> Example: A WhatsApp message like “start cluster” can power up an Azure environment.
 
-### 🧠 Workflow-Level Inputs
+### 🧠 Workflow Inputs
 
-Use custom inputs defined in the workflow:
+Access workflow-level variables:
 
 ```handlebars
 {{input.Cluster}}
@@ -113,11 +121,9 @@ Use custom inputs defined in the workflow:
 {{input.region}}
 ```
 
-> Inputs are reusable across multiple activities.
-
 ### 🔄 Activity Outputs
 
-Access results from previous activities:
+Use data from previous activities:
 
 ```handlebars
 {{activity.FetchUser.output.data.name}}
@@ -125,11 +131,9 @@ Access results from previous activities:
 {{activity.SendEmail.output.status}}
 ```
 
-> Example: Use data from `FetchUser` to personalize a message in `SendEmail`.
+### 🧮 Combine Expressions
 
-### 🧮 Expression Combinations
-
-Combine multiple expressions for advanced automation:
+Build complex logic dynamically:
 
 ```handlebars
 {{activity.FetchUser.output.data.firstName}} {{activity.FetchUser.output.data.lastName}}
@@ -137,53 +141,19 @@ Combine multiple expressions for advanced automation:
 {{flow.connection.azure.client_id}}::{{flow.connection.azure.tenant}}
 ```
 
-> Expressions can be nested and evaluated inline.
-
 ---
 
-## 🧰 Everyday Commands
+## 🧰 Common Commands
 
-Start (foreground):
-
-```bash
-docker compose up
-```
-
-Start (detached):
-
-```bash
-docker compose up -d
-```
-
-Stop (keep data):
-
-```bash
-docker compose down
-```
-
-Stop & remove volumes (fresh reset):
-
-```bash
-docker compose down -v
-```
-
-Recreate after config change:
-
-```bash
-docker compose up -d --build
-```
-
-Check logs:
-
-```bash
-docker compose logs -f
-```
-
-Check status:
-
-```bash
-docker compose ps
-```
+| Action                   | Command                        |
+| ------------------------ | ------------------------------ |
+| Start (foreground)       | `docker compose up`            |
+| Start (detached)         | `docker compose up -d`         |
+| Stop (keep data)         | `docker compose down`          |
+| Stop & remove volumes    | `docker compose down -v`       |
+| Rebuild after changes    | `docker compose up -d --build` |
+| View logs                | `docker compose logs -f`       |
+| Check running containers | `docker compose ps`            |
 
 ---
 
@@ -195,24 +165,27 @@ Check container health:
 docker compose ps
 ```
 
-Tail one service:
+View logs for GripoFlow:
 
 ```bash
 docker compose logs -f gripoflow
 ```
 
-Common fixes:
+### Common Fixes
 
-* Port already in use → change mapping in `docker-compose.yml`.
-* Fresh database → `docker compose down -v && docker compose up -d`.
+* **Port conflict:** Change exposed port in `docker-compose.yml`.
+* **Clean start:**
+
+  ```bash
+  docker compose down -v && docker compose up -d
+  ```
 
 ---
 
-## 📘 Docs
+## 📘 Documentation
 
-Full documentation and advanced integration guides:
+Full documentation and advanced guides:
 👉 [http://docs.gripoflow.gripo.io/](http://docs.gripoflow.gripo.io/)
-
 
 
 

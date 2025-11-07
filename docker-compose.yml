@@ -1,64 +1,65 @@
 version: "3.9"
 
 services:
-  gripo-workflow-nginx:
-    image: gripo/gripo-workflow-nginx:1.0
+  flow-nginx:
+    image: gripo/flow-nginx:latest
     environment:
       - LISTEN_PORT=5055
-      - API_BACKEND=http://gripo-workflow-backend:5001
-      - FRONTEND_BACKEND=http://gripo-workflow-frontend:3000
+      - API_BACKEND=http://flow-backend:5001
+      - WORKFLOW_FRONTEND=http://flow-frontend:3000
     depends_on:
-      - gripo-workflow-backend
-      - gripo-workflow-frontend
+      - flow-backend
+      - flow-frontend
     ports:
       - "7055:5055"
     networks:
-      - gripo-workflow
-  gripo-workflow-db:
+      - gripo-flow
+  
+  flow-db:
     image: mongo:8.0.4
-    ports:
-      - "27019:27017"
+    container_name: flow-db
     volumes:
-      - gripoworkflowdb_data_volume:/data/db
+      - gripoflowdb_data_volume:/data/db
     networks:
-      - gripo-workflow
-  gripo-workflow-redis:
+      - gripo-flow
+  
+  flow-redis:
     image: redis:latest
-    container_name: gripo-workflow-redis
-    ports:
-      - "6378:6379"
+    container_name: flow-redis
     networks:
-      - gripo-workflow
-  gripo-workflow-backend:
-    image: gripo/gripo-workflow:latest
-    container_name: gripo-workflow-backend
-    ports:
-      - "5001:5001"
+      - gripo-flow
+  
+  flow-backend:
+    image: gripo/flow-backend:latest
+    container_name: flow-backend
     environment:
+      - DB_CONNECTION_STRING=mongodb://flow-db:27017
       - TEMPORAL_SERVER_URL=temporal:7233
-      - REDIS_URL=gripo-workflow-redis:6379
-      - DB_CONNECTION_STRING=mongodb://gripo-workflow-db:27017
+      - REDIS_URL=flow-redis:6379
       - SERVER_IP=0.0.0.0:5001
     depends_on:
-      - gripo-workflow-redis
-      - gripo-workflow-db
+      - flow-redis
+      - flow-db
+    ports:
+      - "5001:5001"
     networks:
-      - gripo-workflow
-  gripo-workflow-frontend:
-    image: gripo/gripo-workflow-frontend:latest
-    container_name: gripo-workflow-frontend
+      - gripo-flow
+  
+  flow-frontend:
+    image: gripo/flow-ui:latest
+    container_name: frontend
     restart: always
+    networks:
+      - gripo-flow
     ports:
       - "3000:3000"
-    networks:
-      - gripo-workflow
 
 volumes:
-  gripoworkflowdb_data_volume:
+  gripoflowdb_data_volume:
 
 networks:
-  gripo-workflow:
-    driver: bridge
+  gripo-flow:
+    external: true
 
 
 
