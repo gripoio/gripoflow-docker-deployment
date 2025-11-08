@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  flow-nginx:
+    image: gripo/flow-nginx:latest
+    environment:
+      - LISTEN_PORT=5055
+      - API_BACKEND=http://flow-backend:5001
+      - WORKFLOW_FRONTEND=http://flow-frontend:3000
+    depends_on:
+      - flow-backend
+      - flow-frontend
+    ports:
+      - "7055:5055"
+    networks:
+      - gripo-flow
+  
+  flow-db:
+    image: mongo:8.0.4
+    container_name: flow-db
+    volumes:
+      - gripoflowdb_data_volume:/data/db
+    networks:
+      - gripo-flow
+  
+  flow-redis:
+    image: redis:latest
+    container_name: flow-redis
+    networks:
+      - gripo-flow
+  
+  flow-backend:
+    image: gripo/flow-backend:latest
+    container_name: flow-backend
+    environment:
+      - DB_CONNECTION_STRING=mongodb://flow-db:27017
+      - TEMPORAL_SERVER_URL=temporal:7233
+      - REDIS_URL=flow-redis:6379
+      - SERVER_IP=0.0.0.0:5001
+    depends_on:
+      - flow-redis
+      - flow-db
+    ports:
+      - "5001:5001"
+    networks:
+      - gripo-flow
+  
+  flow-frontend:
+    image: gripo/flow-ui:latest
+    container_name: frontend
+    restart: always
+    networks:
+      - gripo-flow
+    ports:
+      - "3000:3000"
+
+volumes:
+  gripoflowdb_data_volume:
+
+networks:
+  gripo-flow:
+    external: true
+
+
+
+
