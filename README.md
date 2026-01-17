@@ -30,6 +30,8 @@ sudo docker compose up -d
 
 ### 3️⃣ Start GripoFlow
 
+Change into the directory for your target operating system implementation, then run the following command:
+
 ```bash
 cd ..
 sudo docker compose up -d
@@ -41,6 +43,19 @@ sudo docker compose up -d
 http://localhost:7055
 ```
 
+
+### Non-Root Mode (Proxy-Based Execution)
+
+GripoFlow requires root privileges to execute the sandbox feature in its default configuration. This is due to the low-level operations required for sandbox orchestration.
+If you want to avoid running GripoFlow with root privileges, you can start it using:
+
+```
+sudo docker compose -f docker-compose-non-root.yml up -d
+```
+This deployment provisions an additional Nginx container that acts as a secure proxy layer. Sandbox requests are routed through this proxy, allowing GripoFlow to execute sandboxes without requiring root access on the GripoFlow container itself.
+
+✅ Recommended for production environments with strict security or compliance requirements.
+
 ---
 
 ## 🧾 Post-Install Notes
@@ -51,8 +66,8 @@ After a successful launch, Docker Compose will display active containers:
 Thank you for installing GripoFlow!
 
 Service Name: gripoflow
-Network: gf
-Access via: http://127.0.0.1:5055
+Network: gripo-flow
+Access via: http://127.0.0.1:7055
 ```
 
 ---
