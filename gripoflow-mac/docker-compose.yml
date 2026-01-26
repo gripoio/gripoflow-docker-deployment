@@ -32,11 +32,20 @@ services:
   flow-backend:
     image: gripo/flow-backend:latest
     container_name: flow-backend
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./xds_bootstrap.json:/gripo-workflow/xds_bootstrap.json
     environment:
       - DB_CONNECTION_STRING=mongodb://flow-db:27017
       - TEMPORAL_SERVER_URL=temporal:7233
       - REDIS_URL=flow-redis:6379
       - SERVER_IP=0.0.0.0:5001
+      - XDS_SERVER_IP=18000
+      - GRPC_XDS_BOOTSTRAP=xds_bootstrap.json
+      - DOCKER_NETWORK=gripo-flow
+      - GRPC_GO_LOG_SEVERITY_LEVEL=info
+      - GRPC_GO_LOG_VERBOSITY_LEVEL=99
     depends_on:
       - flow-redis
       - flow-db
@@ -44,7 +53,7 @@ services:
       - "5001:5001"
     networks:
       - gripo-flow
-  
+
   flow-frontend:
     image: gripo/flow-ui:latest
     container_name: frontend
