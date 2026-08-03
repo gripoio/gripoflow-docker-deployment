@@ -3,6 +3,8 @@ version: "3.9"
 services:
   flow-nginx:
     image: gripo/flow-nginx:latest
+    container_name: flow-nginx  
+    restart: always
     environment:
       - LISTEN_PORT=5055
       - API_BACKEND=http://flow-backend:5001
@@ -14,32 +16,89 @@ services:
       - "7055:5055"
     networks:
       - gripo-flow
-  
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "1"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"       # Max 1 CPU core
+          memory: 128M      # Hard memory limit
+        reservations:
+          cpus: "0.1"       # Guaranteed CPU
+          memory: 64M       # Guaranteed memory
+
   flow-db:
     image: mongo:8.0.4
     container_name: flow-db
+    restart: always
     volumes:
       - gripoflowdb_data_volume:/data/db
     networks:
       - gripo-flow
-  
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "1"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"        # Max 1 CPU core
+          memory: 1G         # Hard memory limit
+        reservations:
+          cpus: "0.25"       # Guaranteed CPU
+          memory: 300M       # Guaranteed memory
+
   flow-redis:
     image: redis:latest
     container_name: flow-redis
+    restart: always
     networks:
       - gripo-flow
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "1"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"        # Max 1 CPU core
+          memory: 512M         # Hard memory limit
+        reservations:
+          cpus: "0.1"       # Guaranteed CPU
+          memory: 128M       # Guaranteed memory
 
   flow-proxy:
     build: ./docker-proxy
-    user: root
+    container_name: flow-proxy 
+    user: root   
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - gripo-flow
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "1"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
 
   flow-backend:
     image: gripo/flow-backend:latest
     container_name: flow-backend
+    restart: always
     volumes:
       - ./xds_bootstrap.json:/gripo-workflow/xds_bootstrap.json
     environment:
@@ -48,19 +107,35 @@ services:
       - REDIS_URL=flow-redis:6379
       - SERVER_IP=0.0.0.0:5001
       - XDS_SERVER_IP=18000
+      - SSH_PORT=9091
       - GRPC_XDS_BOOTSTRAP=xds_bootstrap.json
       - DOCKER_NETWORK=gripo-flow
       - GRPC_GO_LOG_SEVERITY_LEVEL=info
       - GRPC_GO_LOG_VERBOSITY_LEVEL=99
+      - SANDBOX_WORKER_IMAGE=gripo/flow-sandbox-worker:1.0.0-alpha.1
+      - WORKER_HEALTH_INTERVAL=160
       - DOCKER_HOST= tcp://docker-proxy:2375
     depends_on:
       - flow-proxy
       - flow-redis
       - flow-db
     ports:
-      - "5001:5001"
+      - "9091:9091"
     networks:
       - gripo-flow
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "1"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"        # Max 1 CPU core
+          memory: 1G         # Hard memory limit
+        reservations:
+          cpus: "0.25"       # Guaranteed CPU
+          memory: 300M       # Guaranteed memory
 
   flow-frontend:
     image: gripo/flow-ui:latest
@@ -68,8 +143,19 @@ services:
     restart: always
     networks:
       - gripo-flow
-    ports:
-      - "3000:3000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "1"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"        # Max 1 CPU core
+          memory: 1G         # Hard memory limit
+        reservations:
+          cpus: "0.25"       # Guaranteed CPU
+          memory: 300M       # Guaranteed memory
 
 volumes:
   gripoflowdb_data_volume:
