@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   flow-nginx:
     image: gripo/flow-nginx:latest
@@ -163,7 +161,6 @@ volumes:
 networks:
   gripo-flow:
     external: true
-
 
 
 
