@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   flow-nginx:
     image: gripo/flow-nginx:latest
@@ -38,7 +36,7 @@ services:
       - gripoflowdb_data_volume:/data/db
     networks:
       - gripo-flow
-     logging:
+    logging:
       driver: "json-file"
       options:
         max-size: "2m"
