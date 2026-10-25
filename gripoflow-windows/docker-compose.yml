@@ -4,9 +4,9 @@ services:
     container_name: flow-nginx  
     restart: always
     environment:
-      - LISTEN_PORT=5055
-      - API_BACKEND=http://flow-backend:5001
-      - WORKFLOW_FRONTEND=http://flow-frontend:3000
+      - LISTEN_PORT=${LISTEN_PORT:?Set LISTEN_PORT in .env}
+      - API_BACKEND=${API_BACKEND:?Set API_BACKEND in .env}
+      - WORKFLOW_FRONTEND=${WORKFLOW_FRONTEND:?Set WORKFLOW_FRONTEND in .env}
     depends_on:
       - flow-backend
       - flow-frontend
@@ -79,23 +79,27 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./xds_bootstrap.json:/gripo-workflow/xds_bootstrap.json
     environment:
-      - DB_CONNECTION_STRING=mongodb://flow-db:27017
-      - TEMPORAL_SERVER_URL=temporal:7233
-      - REDIS_URL=flow-redis:6379
-      - SERVER_IP=0.0.0.0:5001
-      - XDS_SERVER_IP=18000
-      - SSH_PORT=9091
-      - GRPC_XDS_BOOTSTRAP=xds_bootstrap.json
-      - DOCKER_NETWORK=gripo-flow
-      - GRPC_GO_LOG_SEVERITY_LEVEL=info
-      - GRPC_GO_LOG_VERBOSITY_LEVEL=99
-      - SANDBOX_WORKER_IMAGE=gripo/flow-sandbox-worker:1.0.0-alpha.1
-      - WORKER_HEALTH_INTERVAL=160
+      - DB_CONNECTION_STRING=${DB_CONNECTION_STRING:?Set DB_CONNECTION_STRING in .env}
+      - TEMPORAL_SERVER_URL=${TEMPORAL_SERVER_URL:?Set TEMPORAL_SERVER_URL in .env}
+      - REDIS_URL=${REDIS_URL:?Set REDIS_URL in .env}
+      - SERVER_IP=${SERVER_IP:?Set SERVER_IP in .env}            
+      - CLICK_HOUSE_ADDRESS=${CLICKHOUSE_ADDRESS:?Set CLICKHOUSE_ADDRESS in .env}
+      - CLICK_HOUSE_DATABASE=${CLICKHOUSE_DB:?Set CLICKHOUSE_DB in .env}
+      - CLICK_HOUSE_USERNAME=${CLICKHOUSE_USER:?Set CLICKHOUSE_USER in .env}
+      - CLICK_HOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:?Set CLICKHOUSE_PASSWORD in .env}       
+      - DEPLOYED_ENVIRONMENT=${DEPLOYED_ENVIRONMENT:?Set DEPLOYED_ENVIRONMENT in .env} 
+      - KUBERNETES_NAMESPACE=${KUBERNETES_NAMESPACE:?Set KUBERNETES_NAMESPACE in .env}
+      - KUBERNETES_STORAGE_CLASS=${KUBERNETES_STORAGE_CLASS:?Set KUBERNETES_STORAGE_CLASS in .env}      
+      - SANDBOX_WORKER_IMAGE=${SANDBOX_WORKER_IMAGE:?Set SANDBOX_WORKER_IMAGE in .env}
+      - GRPC_XDS_BOOTSTRAP=${GRPC_XDS_BOOTSTRAP:?Set GRPC_XDS_BOOTSTRAP in .env}
+      - WORKER_HEALTH_INTERVAL=${WORKER_HEALTH_INTERVAL:?Set WORKER_HEALTH_INTERVAL in .env}
+      - DOCKER_NETWORK=${DOCKER_NETWORK:?Set DOCKER_NETWORK in .env}
+      - XDS_SERVER_IP=${XDS_SERVER_IP:?Set XDS_SERVER_IP in .env}
+      - SSH_PORT=${SSH_PORT:?Set SSH_PORT in .env} 
     depends_on:
       - flow-redis
       - flow-db
-    ports:
-      - "9091:9091"
+      - clickhouse-analysis
     networks:
       - gripo-flow
     logging:
@@ -132,8 +136,45 @@ services:
           cpus: "0.25"       # Guaranteed CPU
           memory: 300M       # Guaranteed memory
 
+  clickhouse-analysis:
+    image: clickhouse/clickhouse-server:26.8.9.10-alpine
+    container_name: clickhouse-analysis
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB:?Set CLICKHOUSE_DB in .env}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:?Set CLICKHOUSE_USER in .env}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?Set CLICKHOUSE_PASSWORD in .env}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+    networks:
+      - gripo-flow
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"        # Max 1 CPU core
+          memory: 1G       # Hard memory limit
+        reservations:
+          cpus: "0.3"       # Guaranteed CPU
+          memory: 500M       # Guaranteed memory
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - clickhouse-client --user "$$CLICKHOUSE_USER" --password "$$CLICKHOUSE_PASSWORD" --query 'SELECT 1' >/dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 volumes:
   gripoflowdb_data_volume:
+  clickhouse_data:
+  clickhouse_logs:
 
 networks:
   gripo-flow:
